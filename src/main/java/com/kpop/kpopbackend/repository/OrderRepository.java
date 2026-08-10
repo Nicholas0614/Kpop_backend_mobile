@@ -8,16 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 
-public interface OrderRepository
-        extends JpaRepository<Order,Integer> {
-
+public interface OrderRepository extends JpaRepository<Order,Integer> {
 
     List<Order> findByUserId(int userId);
 
-
-    Optional<Order> findByPaypalOrderId(
-            String paypalOrderId
-    );
+    Optional<Order> findByPaypalOrderId(String paypalOrderId);
 
 
 }

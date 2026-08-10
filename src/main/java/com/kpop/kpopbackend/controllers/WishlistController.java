@@ -10,56 +10,22 @@ public class WishlistController {
 
     private final WishlistService wishlistService;
 
-    public WishlistController(
-            WishlistService wishlistService
-    ){
-
+    public WishlistController(WishlistService wishlistService) {
         this.wishlistService = wishlistService;
-
     }
 
-    // ADD
     @PostMapping
-    public ResponseEntity<Object> addWishlist(
-
-            @RequestParam int userId,
-            @RequestParam int productId
-
-    ){
-
-        return wishlistService.addWishlist(
-                userId,
-                productId
-        );
-
+    public ResponseEntity<Object> addWishlist(@RequestParam int userId, @RequestParam int productId) {
+        return wishlistService.addWishlist(userId, productId);
     }
 
-    // GET
     @GetMapping("/{userId}")
-    public ResponseEntity<Object> getWishlist(
-
-            @PathVariable int userId
-
-    ){
-
+    public ResponseEntity<Object> getWishlist(@PathVariable int userId) {
         return wishlistService.getWishlist(userId);
-
     }
 
-    // DELETE
     @DeleteMapping
-    public ResponseEntity<Object> removeWishlist(
-
-            @RequestParam int userId,
-            @RequestParam int productId
-
-    ){
-
-        return wishlistService.deleteWishlist(
-                userId,
-                productId
-        );
-
+    public ResponseEntity<Object> removeWishlist(@RequestParam int userId, @RequestParam int productId) {
+        return wishlistService.deleteWishlist(userId, productId);
     }
-
 }

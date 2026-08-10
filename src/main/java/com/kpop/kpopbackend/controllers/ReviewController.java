@@ -17,25 +17,19 @@ public class ReviewController {
 
 
     @PostMapping
-    public ResponseEntity<Object> addReview(
-            @RequestBody Review review
-    ) {
+    public ResponseEntity<Object> addReview( @RequestBody Review review ) {
         return reviewService.addReview(review);
     }
 
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<Object> getReviews(
-            @PathVariable int productId
-    ) {
+    public ResponseEntity<Object> getReviews(@PathVariable int productId) {
         return reviewService.getReviewsByProduct(productId);
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteReview(
-            @PathVariable int id
-    ) {
+    public ResponseEntity<Object> deleteReview(@PathVariable int id) {
         return reviewService.deleteReview(id);
     }
 

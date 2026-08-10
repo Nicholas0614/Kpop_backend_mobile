@@ -6,20 +6,19 @@ import lombok.Data;
 public class CartResponse {
 
     private int id;
-
     private int userId;
-
     private int productId;
+    private Integer variantId;
+    private String variantName;
 
     private String name;
-
     private String category;
 
-    private double price;
+    private Double originalPrice;
+    private Double price;
+    private boolean onSale;
 
-    private double rating;
-
+    private Double rating;
     private String image;
-
     private int quantity;
 }

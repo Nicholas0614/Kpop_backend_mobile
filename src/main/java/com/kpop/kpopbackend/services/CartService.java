@@ -1,195 +1,132 @@
 package com.kpop.kpopbackend.services;
 
-
 import com.kpop.kpopbackend.dto.CartResponse;
 import com.kpop.kpopbackend.models.Cart;
 import com.kpop.kpopbackend.models.Product;
+import com.kpop.kpopbackend.models.ProductVariant;
 import com.kpop.kpopbackend.repository.CartRepository;
 import com.kpop.kpopbackend.repository.ProductRepository;
-
+import com.kpop.kpopbackend.repository.ProductVariantRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-
 @Service
 public class CartService {
 
-
     private final CartRepository cartRepository;
-
     private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
 
-
-    public CartService(
-            CartRepository cartRepository,
-            ProductRepository productRepository
-    ){
+    public CartService(CartRepository cartRepository, ProductRepository productRepository, ProductVariantRepository variantRepository) {
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
     }
 
+    public Cart addCart(Cart cart) {
+        Product product = productRepository.findById(cart.getProductId()).orElse(null);
 
+        if (product == null || cart.getQuantity() <= 0) return null;
 
-    // Add item to cart
-    // Add item to cart
-    public Cart addCart(Cart cart){
+        int availableStock = product.getQuantity();
 
-        Product product = productRepository
-                .findById(cart.getProductId())
-                .orElse(null);
+        if (cart.getVariantId() != null) {
+            ProductVariant variant = variantRepository.findById(cart.getVariantId()).orElse(null);
 
-        if(product == null){
-            return null;
+            if (variant == null || variant.getProduct().getId() != product.getId()) return null;
+
+            availableStock = variant.getQuantity();
         }
 
-        if(cart.getQuantity() <= 0){
-            return null;
-        }
+        Cart existing = cartRepository.findByUserIdAndProductIdAndVariantId(
+                cart.getUserId(), cart.getProductId(), cart.getVariantId());
 
-        Cart existing = cartRepository.findByUserIdAndProductId(
-                cart.getUserId(),
-                cart.getProductId()
-        );
-
-        if(existing != null){
-
+        if (existing != null) {
             int newQuantity = existing.getQuantity() + cart.getQuantity();
 
-            if(newQuantity > product.getQuantity()){
-                return null;
-            }
+            if (newQuantity > availableStock) return null;
 
             existing.setQuantity(newQuantity);
 
             return cartRepository.save(existing);
-
         }
 
-        if(cart.getQuantity() > product.getQuantity()){
-            return null;
-        }
+        if (cart.getQuantity() > availableStock) return null;
 
         return cartRepository.save(cart);
-
     }
 
+    public List<CartResponse> getCartByUser(int userId) {
+        List<Cart> carts = cartRepository.findByUserId(userId);
 
+        return carts.stream().map(cart -> {
+            Product product = productRepository.findById(cart.getProductId()).orElse(null);
+            ProductVariant variant = cart.getVariantId() != null ? variantRepository.findById(cart.getVariantId()).orElse(null) : null;
 
-    // Get user's cart with product details
-    public List<CartResponse> getCartByUser(int userId){
+            CartResponse response = new CartResponse();
 
+            response.setId(cart.getId());
+            response.setUserId(cart.getUserId());
+            response.setProductId(cart.getProductId());
+            response.setVariantId(cart.getVariantId());
+            response.setQuantity(cart.getQuantity());
 
-        List<Cart> carts =
-                cartRepository.findByUserId(userId);
+            if (product != null) {
+                double originalPrice = variant != null ? variant.getPrice() : product.getPrice();
+                double finalPrice = originalPrice;
+                boolean onSale = false;
 
+                if (variant != null && variant.isOnSale() && variant.getSalePrice() != null) {
+                    finalPrice = variant.getSalePrice();
+                    onSale = true;
+                } else if (product.isOnSale() && product.getSalePrice() != null) {
+                    finalPrice = product.getSalePrice();
+                    onSale = true;
+                }
 
-        return carts.stream()
-                .map(cart -> {
+                response.setName(product.getName());
+                response.setCategory(product.getCategory() != null ? product.getCategory().getName() : null);
+                response.setOriginalPrice(originalPrice);
+                response.setPrice(finalPrice);
+                response.setOnSale(onSale);
+                response.setRating(product.getRating());
+                response.setImage(variant != null && variant.getImage() != null ? variant.getImage() : product.getImage());
+            }
 
+            if (variant != null) response.setVariantName(variant.getName());
 
-                    Product product =
-                            productRepository
-                                    .findById(cart.getProductId())
-                                    .orElse(null);
-
-
-                    CartResponse response =
-                            new CartResponse();
-
-
-                    response.setId(cart.getId());
-
-                    response.setUserId(cart.getUserId());
-
-                    response.setProductId(cart.getProductId());
-
-                    response.setQuantity(cart.getQuantity());
-
-
-
-                    if(product != null){
-
-                        response.setName(product.getName());
-
-                        response.setCategory(product.getCategory());
-
-                        response.setPrice(product.getPrice());
-
-                        response.setRating(product.getRating());
-
-                        response.setImage(product.getImage());
-
-                    }
-
-
-                    return response;
-
-
-                })
-                .toList();
-
+            return response;
+        }).toList();
     }
 
+    public Cart updateCart(int id, Cart cart) {
+        Cart existing = cartRepository.findById(id).orElse(null);
 
+        if (existing == null || cart.getQuantity() <= 0) return null;
 
-    // Update quantity
-    public Cart updateCart(
-            int id,
-            Cart cart
-    ){
+        Product product = productRepository.findById(existing.getProductId()).orElse(null);
 
-        Cart existing =
-                cartRepository
-                        .findById(id)
-                        .orElse(null);
+        if (product == null) return null;
 
+        int availableStock = product.getQuantity();
 
-        if(existing == null){
-            return null;
+        if (existing.getVariantId() != null) {
+            ProductVariant variant = variantRepository.findById(existing.getVariantId()).orElse(null);
+
+            if (variant == null) return null;
+
+            availableStock = variant.getQuantity();
         }
 
+        if (cart.getQuantity() > availableStock) return null;
 
-        Product product =
-                productRepository
-                        .findById(existing.getProductId())
-                        .orElse(null);
-
-
-        if(product == null){
-            return null;
-        }
-
-
-        if(cart.getQuantity() > product.getQuantity()){
-
-            return null;
-
-        }
-
-        if(cart.getQuantity() <= 0){
-
-            return null;
-
-        }
-
-
-        existing.setQuantity(
-                cart.getQuantity()
-        );
-
+        existing.setQuantity(cart.getQuantity());
 
         return cartRepository.save(existing);
-
     }
 
-
-
-    // Delete cart item
-    public void deleteCart(int id){
-
+    public void deleteCart(int id) {
         cartRepository.deleteById(id);
-
     }
-
 }

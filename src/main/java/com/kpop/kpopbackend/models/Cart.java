@@ -25,4 +25,6 @@ public class Cart {
 
     private int quantity;
 
+    private Integer variantId;
+
 }

@@ -14,21 +14,14 @@ import java.util.List;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
-
     private final UserRepository userRepository;
 
-    public ReviewService(
-            ReviewRepository reviewRepository,
-            UserRepository userRepository
-    ) {
+    public ReviewService(ReviewRepository reviewRepository, UserRepository userRepository) {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
     }
 
-
-    // Add Review
     public ResponseEntity<Object> addReview(Review review) {
-
         if (review.getRating() < 1 || review.getRating() > 5) {
             return ResponseEntity.badRequest().body("Rating must be between 1 and 5");
         }
@@ -40,18 +33,11 @@ public class ReviewService {
         return ResponseEntity.ok(reviewRepository.save(review));
     }
 
-
-    // Get Reviews By Product
     public ResponseEntity<Object> getReviewsByProduct(int productId) {
-
         List<Review> reviews = reviewRepository.findByProductId(productId);
 
         List<ReviewResponse> response = reviews.stream().map(review -> {
-
-            User user = userRepository
-                    .findById(review.getUserId())
-                    .orElse(null);
-
+            User user = userRepository.findById(review.getUserId()).orElse(null);
             ReviewResponse dto = new ReviewResponse();
 
             dto.setId(review.getId());
@@ -61,30 +47,21 @@ public class ReviewService {
             dto.setComment(review.getComment());
             dto.setDate(review.getDate());
 
-            if (user != null) {
-                dto.setUserName(user.getName());
-            }
+            if (user != null) dto.setUserName(user.getName());
 
             return dto;
-
         }).toList();
 
         return ResponseEntity.ok(response);
     }
 
-
-    // Delete Review
     public ResponseEntity<Object> deleteReview(int id) {
-
         Review review = reviewRepository.findById(id).orElse(null);
 
-        if (review == null) {
-            return ResponseEntity.badRequest().body("Review not found");
-        }
+        if (review == null) return ResponseEntity.badRequest().body("Review not found");
 
         reviewRepository.delete(review);
 
         return ResponseEntity.ok("Review deleted");
     }
-
 }
